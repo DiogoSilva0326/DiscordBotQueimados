@@ -143,6 +143,7 @@ async def say_error(ctx, error):
 # ====================================================================
 # COMANDO DE AJUDA (!help)
 # ====================================================================
+bot.remove_command('help')
 @bot.command()
 async def help(ctx):
     # Criar o formato visual da mensagem (Embed)
