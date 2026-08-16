@@ -144,8 +144,8 @@ async def say_error(ctx, error):
 # COMANDO DE AJUDA (!help)
 # ====================================================================
 bot.remove_command('help')
-@bot.command()
-async def ajuda(ctx):
+@bot.command(name="help") # Dizemos explicitamente ao Discord que este é o comando !help
+async def comando_ajuda(ctx):
     # Criar o formato visual da mensagem (Embed)
     embed = discord.Embed(
         title="🤖 Comandos do Alfredo",
