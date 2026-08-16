@@ -4,6 +4,8 @@ from PIL import Image
 import io
 import os
 from dotenv import load_dotenv
+import asyncio
+import yt_dlp
 
 load_dotenv()
 
@@ -214,6 +216,84 @@ async def comando_ajuda(ctx):
 
     # Enviar a mensagem bonita para o chat
     await ctx.send(embed=embed)
+
+# ====================================================================
+# SISTEMA DE MÚSICA
+# ====================================================================
+# Configurações do yt-dlp para extrair apenas o melhor áudio
+ytdl_format_options = {
+    'format': 'bestaudio/best',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0' # Evita alguns problemas de rede
+}
+
+# Configurações do FFmpeg (o motor de áudio) para não dar falhas na voz
+ffmpeg_options = {
+    'options': '-vn',
+    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+}
+
+ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
+
+@bot.command(name="play")
+async def play(ctx, *, pesquisa: str):
+    # Verifica se o utilizador está num canal de voz
+    if not ctx.author.voice:
+        await ctx.send("❌ Tens de estar num canal de voz primeiro para eu poder entrar!")
+        return
+    
+    canal_voz = ctx.author.voice.channel
+    
+    # Se o bot ainda não estiver em nenhum canal, ele entra.
+    # Se já estiver, ele muda para o teu.
+    if ctx.voice_client is None:
+        await canal_voz.connect()
+    else:
+        await ctx.voice_client.move_to(canal_voz)
+
+    mensagem = await ctx.send(f"🔍 A procurar: `{pesquisa}`...")
+
+    try:
+        # Pede ao yt-dlp para pesquisar/extrair a música sem fazer download para o disco (usa a RAM)
+        loop = asyncio.get_event_loop()
+        dados = await loop.run_in_executor(None, lambda: ytdl.extract_info(f"ytsearch:{pesquisa}" if not "http" in pesquisa else pesquisa, download=False))
+        
+        # Se for uma pesquisa, ele traz uma lista de resultados. Vamos buscar o primeiro.
+        if 'entries' in dados:
+            dados = dados['entries'][0]
+
+        url_audio = dados['url']
+        titulo = dados['title']
+
+        # Se já estiver a tocar alguma coisa, ele para a atual (podemos fazer um sistema de Fila/Queue mais tarde!)
+        if ctx.voice_client.is_playing():
+            ctx.voice_client.stop()
+
+        # Cria a fonte de áudio e dá o Play!
+        fonte = discord.FFmpegPCMAudio(url_audio, **ffmpeg_options)
+        ctx.voice_client.play(fonte, after=lambda e: print(f'Erro de player: {e}') if e else None)
+
+        await mensagem.edit(content=f"🎵 **A tocar agora:** {titulo}")
+
+    except Exception as e:
+        await mensagem.edit(content=f"❌ Ocorreu um erro ao tentar tocar a música: {e}")
+
+@bot.command(name="stop")
+async def stop(ctx):
+    # Faz o bot parar a música e sair do canal de voz
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        await ctx.send("👋 Parei a música e saí do canal. Até à próxima!")
+    else:
+        await ctx.send("Eu não estou em nenhum canal de voz!")
 
 
 # Executa o bot
