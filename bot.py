@@ -23,7 +23,7 @@ MARCA_AGUA_GLOBAL.putalpha(dados_alpha)
 
 @bot.event
 async def on_ready():
-    print(f'✅ O bot {bot.user} está online e otimizado!')
+    print(f'✅ O bot {bot.user} está online e otimizado com novos comandos!')
 
 @bot.command()
 async def marca(ctx):
@@ -39,7 +39,6 @@ async def marca(ctx):
 
     # ====================================================================
     # OTIMIZAÇÃO 2: Bloquear ficheiros pesados (Limite de 3MB)
-    # (3 * 1024 bytes * 1024 bytes = 5 Megabytes)
     # ====================================================================
     TAMANHO_MAXIMO = 3 * 1024 * 1024
     if anexo.size > TAMANHO_MAXIMO:
@@ -81,5 +80,67 @@ async def marca(ctx):
     except Exception as e:
         await ctx.send(f"Ocorreu um erro ao processar a imagem: {e}")
 
+
+# ====================================================================
+# NOVOS COMANDOS (AVATAR, BANNER, SAY/IMPERSONATOR)
+# ====================================================================
+
+@bot.command()
+async def avatar(ctx, membro: discord.Member = None):
+    # Se não mencionar ninguém, o bot mostra o avatar de quem enviou o comando
+    membro = membro or ctx.author
+    
+    # Verifica se tem avatar personalizado, senão usa o padrão do Discord
+    avatar_url = membro.avatar.url if membro.avatar else membro.default_avatar.url
+    await ctx.send(f"🖼️ **Avatar de {membro.display_name}:**\n{avatar_url}")
+
+@bot.command()
+async def banner(ctx, membro: discord.Member = None):
+    membro = membro or ctx.author
+    
+    # Para o banner, o discord.py obriga-nos a "buscar" (fetch) o perfil completo do utilizador
+    utilizador = await bot.fetch_user(membro.id)
+    
+    if utilizador.banner:
+        await ctx.send(f"🌌 **Banner de {utilizador.display_name}:**\n{utilizador.banner.url}")
+    else:
+        await ctx.send(f"O utilizador **{utilizador.display_name}** não tem um banner de perfil personalizado.")
+
+@bot.command()
+async def say(ctx, membro: discord.Member, *, mensagem: str):
+    # Apaga a mensagem original de quem enviou o comando para manter a ilusão
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        pass # Se o bot não tiver permissão para apagar mensagens, ignora
+
+    # Procura se o bot já tem um Webhook neste canal
+    webhooks = await ctx.channel.webhooks()
+    webhook = next((wh for wh in webhooks if wh.user == bot.user), None)
+    
+    # Se não tiver, cria um Webhook novo
+    if not webhook:
+        webhook = await ctx.channel.create_webhook(name="BotQueimadosWebhook")
+        
+    # Obtém o avatar do membro que queremos imitar
+    avatar_url = membro.avatar.url if membro.avatar else membro.default_avatar.url
+    
+    # Usa o webhook para enviar a mensagem disfarçada de outro utilizador
+    await webhook.send(
+        content=mensagem,
+        username=membro.display_name,
+        avatar_url=avatar_url
+    )
+
+@say.error
+async def say_error(ctx, error):
+    # Avisa caso a pessoa se esqueça de mencionar o alvo ou a mensagem
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("❌ Uso incorreto! O formato é: `!say @utilizador a mensagem que queres escrever`")
+    elif isinstance(error, commands.MemberNotFound):
+        await ctx.send("❌ Não consegui encontrar esse utilizador. Tens de o mencionar com um @!")
+
+
+# Executa o bot
 token_seguro = os.getenv('DISCORD_TOKEN')
 bot.run(token_seguro)
