@@ -2,6 +2,10 @@ import discord
 from discord.ext import commands
 from PIL import Image
 import io
+import os 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configurar as permissões (Intents)
 intents = discord.Intents.default()
@@ -68,4 +72,5 @@ async def marca(ctx):
         await ctx.send(f"Ocorreu um erro ao processar a imagem: {e}")
 
 # Executar o bot
-bot.run('MTUzODI3NTQwODYyMDAzMjE3MQ.GyBSzU.da1eiEVtKHtB1InTGSHb9jhKWmIwQbeHFonfbo')
+token_seguro = os.getenv('DISCORD_TOKEN')
+bot.run(token_seguro)
