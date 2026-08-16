@@ -12,6 +12,37 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 # ====================================================================
+# SISTEMA DE SEGURANÇA: Apenas pessoas com esta Role podem usar o bot
+# ====================================================================
+NOME_DA_ROLE = "Imagina" 
+
+@bot.check
+async def verificar_permissao(ctx):
+    # Se a pessoa tentar usar o bot por Mensagem Privada (DM), bloqueia logo
+    if ctx.guild is None:
+        return False
+        
+    # Procura se o utilizador tem a role com o nome exato
+    tem_permissao = discord.utils.get(ctx.author.roles, name=NOME_DA_ROLE)
+    
+    if tem_permissao is not None:
+        return True # A pessoa tem a role, o comando avança!
+    else:
+        # A pessoa não tem a role. Avisa e bloqueia!
+        await ctx.send(f"❌ {ctx.author.mention}, não tens permissão! Precisas do cargo **{NOME_DA_ROLE}** para me conseguires usar.")
+        return False 
+
+@bot.event
+async def on_command_error(ctx, error):
+    # Isto serve apenas para não encher os teus "Logs" da Discloud com mensagens de erro vermelhas quando o segurança bloqueia alguém.
+    if isinstance(error, commands.CheckFailure):
+        pass
+    elif isinstance(error, commands.CommandNotFound):
+        pass
+    else:
+        print(f"Ocorreu um erro: {error}")
+
+# ====================================================================
 # OTIMIZAÇÃO 1: Preparar a marca de água UMA ÚNICA VEZ quando o bot liga
 # ====================================================================
 MARCA_AGUA_GLOBAL = Image.open("marca_de_agua.png").convert("RGBA")
