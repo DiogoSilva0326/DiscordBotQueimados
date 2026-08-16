@@ -14,7 +14,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # ====================================================================
 # OTIMIZAÇÃO 1: Preparar a marca de água UMA ÚNICA VEZ quando o bot liga
 # ====================================================================
-MARCA_AGUA_GLOBAL = Image.open("logo_queimados.png").convert("RGBA")
+MARCA_AGUA_GLOBAL = Image.open("marca_de_agua.png").convert("RGBA")
 nivel_opacidade = 150
 dados_alpha = MARCA_AGUA_GLOBAL.split()[3]
 dados_alpha = dados_alpha.point(lambda p: p * (nivel_opacidade / 255.0))
