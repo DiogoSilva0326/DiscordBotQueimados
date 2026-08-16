@@ -9,7 +9,7 @@ load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 # ====================================================================
 # OTIMIZAÇÃO 1: Preparar a marca de água UMA ÚNICA VEZ quando o bot liga
@@ -139,6 +139,49 @@ async def say_error(ctx, error):
         await ctx.send("❌ Uso incorreto! O formato é: `!say @utilizador a mensagem que queres escrever`")
     elif isinstance(error, commands.MemberNotFound):
         await ctx.send("❌ Não consegui encontrar esse utilizador. Tens de o mencionar com um @!")
+
+# ====================================================================
+# COMANDO DE AJUDA (!help)
+# ====================================================================
+@bot.command()
+async def help(ctx):
+    # Criar o formato visual da mensagem (Embed)
+    embed = discord.Embed(
+        title="🤖 Comandos do Alfredo",
+        description="Aqui tens a lista de tudo o que eu consigo fazer:",
+        color=discord.Color.blue() 
+    )
+
+    # Adicionar os blocos de texto para cada comando
+    embed.add_field(
+        name="🖼️ `!marca`", 
+        value="Envia uma imagem no chat e escreve este comando na legenda.", 
+        inline=False
+    )
+    
+    embed.add_field(
+        name="👤 `!avatar [@utilizador]`", 
+        value="Mostra a foto de perfil em tamanho grande da pessoa que mencionares. Se usares o comando sozinho, mostro a tua foto.", 
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🌌 `!banner [@utilizador]`", 
+        value="Mostra o banner de perfil da pessoa mencionada.", 
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🎭 `!say [@utilizador] [mensagem]`", 
+        value="Prega uma partida! Eu apago a tua mensagem e envio o teu texto disfarçado (com o nome e foto) da pessoa que mencionaste.\n*Exemplo: `!say @Defse Imagina, adoro crianças mas`*", 
+        inline=False
+    )
+
+    # Adicionar um rodapé
+    embed.set_footer(text="Desenvolvido para a Unidade de Queimados 🔥")
+
+    # Enviar a mensagem bonita para o chat
+    await ctx.send(embed=embed)
 
 
 # Executa o bot
